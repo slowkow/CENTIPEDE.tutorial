@@ -2,6 +2,12 @@
 title: "Find genomic loci bound to transcription factors with CENTIPEDE"
 author: "Kamil Slowikowski"
 date: "`r Sys.Date()`"
+abstract: |
+  This is a practical tutorial for running CENTIPEDE with DNase-Seq data. It
+  explains how to prepare the data and how to run the analysis. The goal is to
+  predict if a putative transcription factor binding site is actually bound or
+  not. For details about the statistical models underlying the methods, please
+  see (Pique-Regi, et al. 2011).
 output:
     rmarkdown::html_vignette:
         toc: true
@@ -15,12 +21,6 @@ vignette: >
       \usepackage[utf8]{inputenc}
 ---
 
-This is a tutorial for running [CENTIPEDE] with [DNase-Seq] data. By following
-this tutorial, you will learn how to determine if a putative transcription
-factor binding site is actually bound or not. At the end, you will see how
-to incorporate other information such as sequence conservation across
-vertebrates.
-
 # Introduction
 
 [Transcription factors] (TFs) are proteins involved in the transcription of
@@ -28,7 +28,7 @@ DNA to RNA. They bind to genomic DNA and regulate the transcription of nearby
 genes. Biologists can perform experiments to identify the specific sequences
 of nucleotides to which a TF can bind, called motifs. Computational biologists
 can use these motifs to identify sites in the genome where a a TF is likely to
-bind. We can use data from DNase-Seq experiments that measure open chromatin
+bind. We can use data from [DNase-Seq] experiments that measure open chromatin
 across the entire genome to determine if a putative TF binding site actually
 has a bound TF.
 
@@ -36,8 +36,9 @@ has a bound TF.
 bound by a particular TF. It uses information from a DNase-Seq experiment
 about the profile of reads surrounding a putative TF binding site. Further, it
 is able to incorporoate prior information such as sequence conservation across
-species. The method was created by [Roger Pique-Regi] when he was working in
-[Jonathan Pritchard]'s group at University of Chicago in 2011.
+species. The method was created by [Roger Pique-Regi] and [Jacob Degner] when
+they were working in [Jonathan Pritchard]'s group at University of Chicago
+in 2011.
 
 # Software requirements
 
@@ -264,18 +265,56 @@ zcat $sites | head
 
 ## Determine if TF sites are bound
 
-Start an R session and create a matrix with read start counts. Each row in
-the matrix represents a site where the PWM matches the sequence.
+Start an R session and load the code provided in the package that accompanies
+this tutorial:
 
 ```{r}
+# install.packages("devtools")
+# library(devtools)
+# devtools::install_github("slowkow/CENTIPEDE.tutorial")
+
 library(CENTIPEDE.tutorial)
+# Loads two data objects: cen, site_cons
 ```
 
-I've already included the result from the call to "centipede_data", so you can
-skip this line if you wish to save time.
+Count read start positions within 100 bp upstream or 100 bp downstream of the
+13 bp PWM match sites that were assigned P < 1e-4 by FIMO.
+
+**Note:** The `cen` object from this step is included in the package, so
+you can skip this step to save time.
 
 ```{r, eval=FALSE}
-cen <- centipede_data('ENCFF000SHS.bam', 'M6496_1.02.fimo.txt.gz')
+cen <- centipede_data(
+  bam_file = "ENCFF000SHS.bam",
+  fimo_file = "M6496_1.02.fimo.txt.gz",
+  log10p = 4,
+  flank_size = 100
+)
+```
+
+The `cen` object is a list with two elements:
+
+1. `regions` is a dataframe with one row for each PWM region.
+2. `mat` is a matrix with read counts for each PWM region.
+
+Here are the selected PWM sites, including 100 bp flanks:
+
+```{r}
+head(cen$regions)
+```
+
+In the count matrix `mat`, reads on the positive strand are counted in the
+first 213 columns of the matrix, and reads on the negative strand are counted
+in the last 213 columns of the matrix.
+
+Below, we can see the read start counts for the first region
+`chr1:753016-753228`. Notice that there is just 1 read on the positive strand
+about 90 bases upstream of the PWM match site (columns 1-213 in the count
+matrix). On the negative strand, we have up to 4 reads mapping at single
+position (columns 214-426 in the count matrix).
+
+```{r}
+plot(cen$mat[1,], xlab = "column", ylab = "reads")
 ```
 
 We can see how many read starts occur in each region:
@@ -362,8 +401,10 @@ bigWigRegions() {
 bigWigRegions $cons <(zcat $dnase_bed) | gzip > $cons_bed
 ```
 
-Compute mean conservation scores for each PWM site. I've already included the
-result of this chunk of code, so you can skip it if you wish to save time.
+Compute mean conservation scores for each PWM site:
+
+**Note:** The `site_cons` object from this step is included in the package, so
+you can skip this step to save time.
 
 ```{r, eval=FALSE}
 # Conservation scores for each base in the significant DNase peaks.
@@ -415,12 +456,11 @@ plot(site_cons, log10(rowSums(cen$mat) + 1),
 Run CENTIPEDE again, but this time incorporate conservation information:
 
 ```{r, results='hide'}
-idx <- site_cons > 0.8
 fit2 <- fitCentipede(
-  Xlist = list(DNase = cen$mat[idx, ]),
+  Xlist = list(DNase = cen$mat),
   Y = as.matrix(data.frame(
-    Intercept = rep(1, nrow(cen$mat[idx, ])),
-    Conservation = site_cons[idx]
+    Intercept = rep(1, nrow(cen$mat)),
+    Conservation = site_cons
   ))
 )
 plotProfile(fit2$LambdaParList[[1]], Mlen = 13)
@@ -441,6 +481,31 @@ range(fit2$PostPr - fit$PostPr)
 plot(sort(fit2$PostPr - fit$PostPr), ylab = "delta PostPr")
 ```
 
+## Restrict analysis to conserved sites
+
+In addition to incorporating conservation information into the CENTIPEDE model,
+lets also use that information as a filter to limit the number of sites that
+are modeled by CENTIPEDE.
+
+```{r, results='hide'}
+idx <- site_cons > 0.8
+fit3 <- fitCentipede(
+  Xlist = list(DNase = cen$mat[idx, ]),
+  Y = as.matrix(data.frame(
+    Intercept = rep(1, nrow(cen$mat[idx, ])),
+    Conservation = site_cons[idx]
+  ))
+)
+```
+
+Now we can see that there might be an interesting signal 50 bp downstream of
+the PWM match sites. Perhaps this offset is in part due to the length of
+sequencing reads in this experiment (21 bp).
+
+```{r}
+plotProfile(fit3$LambdaParList[[1]], Mlen = 13)
+```
+
 # References
 
 Pique-Regi, R. et al. Accurate inference of transcription factor binding from
@@ -451,6 +516,7 @@ DNA sequence and chromatin accessibility data. Genome Res. 21, 447–455 (2011).
 [DNase-Seq]: https://en.wikipedia.org/wiki/DNase-Seq
 [Jonathan Pritchard]: http://pritchardlab.stanford.edu/home.html
 [Roger Pique-Regi]: https://sites.google.com/site/rpique/
+[Jacob Degner]: https://sites.google.com/site/jfdegner/
 [Transcription factors]: https://en.wikipedia.org/wiki/Transcription_factor
 [position weight matrix]: https://en.wikipedia.org/wiki/Position_weight_matrix
 [hg19]: http://hgdownload.cse.ucsc.edu/goldenpath/hg19/chromosomes/
