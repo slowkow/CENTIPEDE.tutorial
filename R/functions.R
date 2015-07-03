@@ -32,7 +32,8 @@ read_bedGraph <- function(filename, ...) {
   )
 }
 
-#' Count readstarts at each nucleotide position in each BED region.
+#' Read a text file output by FIMO and select sites that meet a significance
+#' threshold.
 #'
 #' @param fimo_file A FIMO text file with PWM match sites.
 #' @param log10p Select FIMO matches with log10 p-value greater than this.
@@ -155,6 +156,8 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
   list(mat = mat, regions = regions)
 }
 
+# TODO: Create better functions for viewing CENTIPEDE results.
+#
 # imageReadStarts <- function(mat, site.width = 13) {
 #   # Try using image() ...
 #   image(t(mat), useRaster = TRUE, axes = FALSE)
