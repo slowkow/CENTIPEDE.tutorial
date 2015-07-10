@@ -8,6 +8,16 @@ see ([Pique-Regi, et al. 2011][1]).
 
 [Click here][2] to read the tutorial.
 
+This repository has an R code to prepare data for CENTIPEDE. Install and load it:
+
+```r
+install.packages("devtools")
+library(devtools)
+
+devtools::install_github("slowkow/CENTIPEDE.tutorial")
+library(CENTIPEDE.tutorial)
+```
+
 [CENTIPEDE]: http://centipede.uchicago.edu/ 
 [DNase-Seq]: https://en.wikipedia.org/wiki/DNase-Seq
 [1]: http://genome.cshlp.org/content/21/3/447
