@@ -89,6 +89,13 @@ library(CENTIPEDE)
 example(fitCentipede)
 ```
 
+Finally, install the CENTIPEDE tutorial package:
+
+```{r, eval=FALSE}
+install.packages("devtools")
+devtools::install_github("slowkow/CENTIPEDE.tutorial")
+```
+
 ## Rsamtools
 
 Rsamtools is an R package available via [Bioconductor]. Install it in an
@@ -190,7 +197,7 @@ reference genome [here][hg19], or follow these commands:
 ```bash
 wget "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/chromFaMasked.tar.gz"
 tar -xzvf chromFaMasked.tar.gz
-gunzip -c chr*.fa.gz > hg19.fa
+gunzip -c chr*.fa.masked > hg19.fa
 ```
 
 ## DNase-Seq data
@@ -242,8 +249,8 @@ bedtools getfasta -fi $genome -bed $dnase_gt8 -fo $dnase_fasta
 Search for sequences within these peaks that match the PWM:
 
 ```bash
-meme=M3852_1.01.meme
-sites=M3852_1.01.fimo.txt.gz
+meme=M6496_1.02.meme
+sites=M6496_1.02.fimo.txt.gz
 
 fimo --text --parse-genomic-coord $meme $dnase_fasta | gzip > $sites
 
@@ -270,18 +277,23 @@ this tutorial:
 
 ```{r}
 # install.packages("devtools")
-# library(devtools)
+library(devtools)
+library(Rsamtools)
+library(CENTIPEDE)
+
+# Install the tutorial package:
 # devtools::install_github("slowkow/CENTIPEDE.tutorial")
 
+# Load the functions and example data:
 library(CENTIPEDE.tutorial)
-# Loads two data objects: cen, site_cons
 ```
 
 Count read start positions within 100 bp upstream or 100 bp downstream of the
 13 bp PWM match sites that were assigned P < 1e-4 by FIMO.
 
 **Note:** The `cen` object from this step is included in the package, so
-you can skip this step to save time.
+you can skip this step to save time. If you wish to analyze other data or
+motifs, then you should call the `centipede_data` function on your own files.
 
 ```{r, eval=FALSE}
 cen <- centipede_data(
@@ -404,7 +416,8 @@ bigWigRegions $cons <(zcat $dnase_bed) | gzip > $cons_bed
 Compute mean conservation scores for each PWM site:
 
 **Note:** The `site_cons` object from this step is included in the package, so
-you can skip this step to save time.
+you can skip this step to save time if you're following along with the data
+from the tutorial.
 
 ```{r, eval=FALSE}
 # Conservation scores for each base in the significant DNase peaks.

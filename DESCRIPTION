@@ -1,8 +1,8 @@
 Package: CENTIPEDE.tutorial
 Type: Package
 Title: A tutorial for running CENTIPEDE.
-Version: 1.0
-Date: 2015-07-03
+Version: 1.1
+Date: 2015-09-17
 Authors@R: 'Kamil Slowikowski <kslowikowski@fas.harvard.edu> [aut,cre]'
 Description: A package with some utility functions and a vignette describing
     how to use CENTIPEDE to determine if a transcription factor is bound to

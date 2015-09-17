@@ -8,6 +8,7 @@
 #'
 #' @param region A string like "chr1:123-456".
 #' @return A list with elements "chrom", "start", and "end".
+#' @export
 parse_region <- function(region) {
   xs <- strsplit(region, ":")[[1]]
   chrom <- xs[1]
@@ -16,10 +17,11 @@ parse_region <- function(region) {
 }
 
 #' Read a bedGraph file with 4 columns: chrom, start, end, score
-#' 
+#'
 #' @param filename The file to read.
 #' @param ... Additional parameters passed to read.delim.
 #' @return A GRanges object.
+#' @export
 read_bedGraph <- function(filename, ...) {
   dat <- read.delim(
     filename, header = FALSE, stringsAsFactors = FALSE, ...)
@@ -41,6 +43,7 @@ read_bedGraph <- function(filename, ...) {
 #' @details
 #'    For sites represented multiple times, the one with the maximum
 #'    score is selected.
+#' @export
 read_fimo <- function(fimo_file, log10p = 4) {
   # Read the PWM sites.
   sites <- read.delim(fimo_file)
@@ -48,7 +51,7 @@ read_fimo <- function(fimo_file, log10p = 4) {
   # Discard poor matches.
   sites <- sites[-log10(sites$p.value) > log10p, , drop = FALSE]
 
-  # For sites represented multiple times, select the one with the max score. 
+  # For sites represented multiple times, select the one with the max score.
   sites$region <- paste(sites$sequence.name, sites$start, sites$stop)
   sites <- do.call(rbind, lapply(unique(sites$region), function(region) {
     x <- sites[sites$region == region,]
@@ -75,6 +78,7 @@ read_fimo <- function(fimo_file, log10p = 4) {
 #'    file, and one column for each genomic position.
 #'    The returned dataframe "regions" described each region with a p-value
 #'    and q-value from FIMO.
+#' @export
 centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
   # Read the FIMO output file.
   sites <- read_fimo(fimo_file)
@@ -86,9 +90,16 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
   # Order the PWM binding sites by chr, start, end.
   sites <- sites[with(sites, order(sequence.name, start, stop)), ]
 
+  # Index the BAM file if necessary.
+  bam_index_file <- sprintf("%.bai", bam_file)
+  if (!file.exists(bam_index_file)) {
+    message("Indexing the BAM file... this may take several minutes.")
+    indexBam(bam_file, overwrite = FALSE)
+  }
+
   # Extract reads that overlap the PWM sites.
   bam <- Rsamtools::scanBam(
-    bam_file,
+    file = bam_file,
     param = Rsamtools::ScanBamParam(
       which = GRanges(
         seqnames = sites$sequence.name,
@@ -178,21 +189,21 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
 #     ),
 #     labels = c("", "")
 #   )
-# 
+#
 #   # Also try using grid.raster() ...
 #   img <- 1 - mat / max(mat)
 #   w <- convertUnit(unit(ncol(img),"pt"), "in", value=TRUE)
 #   h <- convertUnit(unit(nrow(img),"pt"), "in", value=TRUE)
-#   
-#   # dev.new(width=w, height=h)    
-#   
+#
+#   # dev.new(width=w, height=h)
+#
 #   grid.raster(
 #     image = img,
 #     width = unit(1, "npc"),
 #     height = unit(1, "npc")
 #   )
-#   
+#
 #   v = dataViewport(xData = d$x, yData = d$y)
-#   grid.points(d$x,d$y, default.units="native", vp = v, 
+#   grid.points(d$x,d$y, default.units="native", vp = v,
 #               gp=gpar(col="white"), pch=8)
 # }
