@@ -91,7 +91,7 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
   sites <- sites[with(sites, order(sequence.name, start, stop)), ]
 
   # Index the BAM file if necessary.
-  bam_index_file <- sprintf("%.bai", bam_file)
+  bam_index_file <- sprintf("%s.bai", bam_file)
   if (!file.exists(bam_index_file)) {
     message("Indexing the BAM file... this may take several minutes.")
     indexBam(bam_file, overwrite = FALSE)
