@@ -57,6 +57,7 @@ In this tutorial, I'll use version 4.10.1 patch 4:
 
 ```bash
 wget http://meme-suite.org/meme-software/4.10.1/meme_4.10.1_4.tar.gz
+tar xf meme_4.10.1_4.tar.gz
 cd meme_4.10.1
 ./configure --prefix=$HOME/meme --with-url="http://meme-suite.org"
 make
@@ -517,6 +518,12 @@ sequencing reads in this experiment (21 bp).
 
 ```{r}
 plotProfile(fit3$LambdaParList[[1]], Mlen = 13)
+```
+
+# Session Info
+
+```{r}
+sessionInfo()
 ```
 
 # References
