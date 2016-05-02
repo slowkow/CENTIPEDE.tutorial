@@ -44,26 +44,28 @@ read_bedGraph <- function(filename, ...) {
 #'    For sites represented multiple times, the one with the maximum
 #'    score is selected.
 #' @export
-read_fimo <- function(fimo_file, log10p = 4) {
+read_fimo <- function(fimo_file, log10p = 4,...) {
+  # Parse the header
+  #names <- colnames(read.delim(fimo_file,header = TRUE,nrows = 0))
   # Read the PWM sites.
-  sites <- read.delim(fimo_file)
-
+  sites <- read.delim(fimo_file,...)
+  
   # Discard poor matches.
   sites <- sites[-log10(sites$p.value) > log10p, , drop = FALSE]
-
+  
   # For sites represented multiple times, select the one with the max score.
   sites$region <- paste(sites$sequence.name, sites$start, sites$stop)
-  sites <- do.call(rbind, lapply(unique(sites$region), function(region) {
+  sites <- do.call(rbind, lapply(unique(sites$region), sites = sites , function(region,sites) {
     x <- sites[sites$region == region,]
     x[which.max(x$score),]
   }))
   sites <- sites[ , !colnames(sites) %in% c("region")]
-
+  
   # Ensure we have some matches.
   if (nrow(sites) == 0) {
     stop(sprintf("No significant sites for '%s'", fimo_file))
   }
-
+  
   return(sites)
 }
 
@@ -79,9 +81,9 @@ read_fimo <- function(fimo_file, log10p = 4) {
 #'    The returned dataframe "regions" described each region with a p-value
 #'    and q-value from FIMO.
 #' @export
-centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
+centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ...) {
   # Read the FIMO output file.
-  sites <- read_fimo(fimo_file)
+  sites <- read_fimo(fimo_file,...)
 
   # Upstream flank, the PWM match, and downstream flank.
   sites$start <- sites$start - flank_size
