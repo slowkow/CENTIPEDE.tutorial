@@ -55,10 +55,11 @@ read_fimo <- function(fimo_file, log10p = 4,...) {
   
   # For sites represented multiple times, select the one with the max score.
   sites$region <- paste(sites$sequence.name, sites$start, sites$stop)
-  sites <- do.call(rbind, lapply(unique(sites$region), sites = sites , function(region,sites) {
-    x <- sites[sites$region == region,]
-    x[which.max(x$score),]
-  }))
+  # sort sites according to regions and descending score
+  sites <- sites[with(sites, order(sequence.name, start, stop,-score)),]
+  # remove duplicated regions (with lower scores)
+  sites <- sites[-which(duplicated(sites$region)),]
+  
   sites <- sites[ , !colnames(sites) %in% c("region")]
   
   # Ensure we have some matches.
@@ -90,7 +91,7 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ..
   sites$stop <- sites$stop + flank_size
 
   # Order the PWM binding sites by chr, start, end.
-  sites <- sites[with(sites, order(sequence.name, start, stop)), ]
+  #sites <- sites[with(sites, order(sequence.name, start, stop)), ]
 
   # Index the BAM file if necessary.
   bam_index_file <- sprintf("%s.bai", bam_file)
