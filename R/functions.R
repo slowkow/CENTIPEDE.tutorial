@@ -45,8 +45,6 @@ read_bedGraph <- function(filename, ...) {
 #'    score is selected.
 #' @export
 read_fimo <- function(fimo_file, log10p = 4,...) {
-  # Parse the header
-  #names <- colnames(read.delim(fimo_file,header = TRUE,nrows = 0))
   # Read the PWM sites.
   sites <- read.delim(fimo_file,...)
   
@@ -55,10 +53,12 @@ read_fimo <- function(fimo_file, log10p = 4,...) {
   
   # For sites represented multiple times, select the one with the max score.
   sites$region <- paste(sites$sequence.name, sites$start, sites$stop)
-  sites <- do.call(rbind, lapply(unique(sites$region), sites = sites , function(region,sites) {
-    x <- sites[sites$region == region,]
-    x[which.max(x$score),]
-  }))
+  # sort sites according to regions and descending score
+  sites <- sites[with(sites, order(sequence.name, start, stop,-score)),]
+  # find duplicated regions and remove the ones with lower scores
+  dups <- duplicated(sites$region)
+  if( sum(dups) > 0 ) sites <- sites[-which(dups),]
+  
   sites <- sites[ , !colnames(sites) %in% c("region")]
   
   # Ensure we have some matches.
@@ -90,7 +90,7 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ..
   sites$stop <- sites$stop + flank_size
 
   # Order the PWM binding sites by chr, start, end.
-  sites <- sites[with(sites, order(sequence.name, start, stop)), ]
+  #sites <- sites[with(sites, order(sequence.name, start, stop)), ]
 
   # Index the BAM file if necessary.
   bam_index_file <- sprintf("%s.bai", bam_file)
