@@ -162,8 +162,11 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ..
     }
     strand <- item$strand[idx]
     position <- item$pos[idx]
-
-    # Create a row that represents the flanking region surrounding a site.
+    
+    # Create a row that represents the flanking region surrounding a site, 
+    # each column is a position relative to the center of the motif match. 
+    # The values in this matrix are number of read start- sites that occur at that position. 
+    # We simply concatenate the forward and reverse strands together for the purpose of model fitting.
     # The row contains entries for the positive followed by negative strands.
     is.neg <- as.numeric(strand == "-")
     j <- 1 + position - min(position) + (len * is.neg)
