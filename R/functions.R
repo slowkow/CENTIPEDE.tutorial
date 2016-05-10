@@ -111,7 +111,7 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ..
           end = sites$stop
         )
       ),
-      what = c("strand", "pos")
+      what = c("strand", "pos", "qwidth")
     )
   )
 
@@ -151,6 +151,11 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ..
 
     # Exclude reads with start positions outside the region.
     item <- bam[[i]]
+    
+    # take care of negative reads starting at end position
+    neg_shift <- item$qwidth * as.numeric(item$strand == "-")
+    item$pos <- item$pos + neg_shift
+    
     idx <- item$pos >= region$start & item$pos <= region$end
     if (sum(idx) == 0) {
       return(rep(0, 2 * len))
