@@ -84,11 +84,12 @@ read_fimo <- function(fimo_file, log10p = 4,...) {
 centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ...) {
   # Read the FIMO output file.
   sites <- read_fimo(fimo_file,...)
-
-  # Upstream flank, the PWM match, and downstream flank.
-  sites$start <- sites$start - flank_size
-  sites$stop <- sites$stop + flank_size
-
+  
+  # Upstream flank, the center of PWM match, and downstream flank.
+  motif_center <- floor(nchar(as.character(sites$matched.sequence))/2)
+  sites$start <- sites$start - ( flank_size + motif_center )
+  sites$stop <- sites$stop + ( flank_size  - motif_center ) 
+  
   # Order the PWM binding sites by chr, start, end.
   #sites <- sites[with(sites, order(sequence.name, start, stop)), ]
 
