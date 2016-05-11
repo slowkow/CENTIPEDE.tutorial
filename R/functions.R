@@ -44,26 +44,28 @@ read_bedGraph <- function(filename, ...) {
 #'    For sites represented multiple times, the one with the maximum
 #'    score is selected.
 #' @export
-read_fimo <- function(fimo_file, log10p = 4) {
+read_fimo <- function(fimo_file, log10p = 4,...) {
   # Read the PWM sites.
-  sites <- read.delim(fimo_file)
-
+  sites <- read.delim(fimo_file,...)
+  
   # Discard poor matches.
   sites <- sites[-log10(sites$p.value) > log10p, , drop = FALSE]
-
+  
   # For sites represented multiple times, select the one with the max score.
   sites$region <- paste(sites$sequence.name, sites$start, sites$stop)
-  sites <- do.call(rbind, lapply(unique(sites$region), function(region) {
-    x <- sites[sites$region == region,]
-    x[which.max(x$score),]
-  }))
+  # sort sites according to regions and descending score
+  sites <- sites[with(sites, order(sequence.name, start, stop,-score)),]
+  # find duplicated regions and remove the ones with lower scores
+  dups <- duplicated(sites$region)
+  if( sum(dups) > 0 ) sites <- sites[-which(dups),]
+  
   sites <- sites[ , !colnames(sites) %in% c("region")]
-
+  
   # Ensure we have some matches.
   if (nrow(sites) == 0) {
     stop(sprintf("No significant sites for '%s'", fimo_file))
   }
-
+  
   return(sites)
 }
 
@@ -79,16 +81,18 @@ read_fimo <- function(fimo_file, log10p = 4) {
 #'    The returned dataframe "regions" described each region with a p-value
 #'    and q-value from FIMO.
 #' @export
-centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
+centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100, ...) {
   # Read the FIMO output file.
-  sites <- read_fimo(fimo_file)
-
-  # Upstream flank, the PWM match, and downstream flank.
-  sites$start <- sites$start - flank_size
+  sites <- read_fimo(fimo_file,log10p,...)
+  
+  # Upstream flank, the center of PWM match, and downstream flank.
+  #motif_center <- floor(nchar(as.character(sites$matched.sequence))/2)
+  #sites$start <- sites$start - ( flank_size + motif_center )
+  #sites$stop <- sites$stop + ( flank_size  - motif_center ) 
+  sites$start <- sites$start - flank_size 
   sites$stop <- sites$stop + flank_size
-
   # Order the PWM binding sites by chr, start, end.
-  sites <- sites[with(sites, order(sequence.name, start, stop)), ]
+  #sites <- sites[with(sites, order(sequence.name, start, stop)), ]
 
   # Index the BAM file if necessary.
   bam_index_file <- sprintf("%s.bai", bam_file)
@@ -108,7 +112,7 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
           end = sites$stop
         )
       ),
-      what = c("strand", "pos")
+      what = c("strand", "pos", "qwidth")
     )
   )
 
@@ -148,14 +152,22 @@ centipede_data <- function(bam_file, fimo_file, log10p = 4, flank_size = 100) {
 
     # Exclude reads with start positions outside the region.
     item <- bam[[i]]
+    
+    # take care of negative reads starting at end position
+    neg_shift <- item$qwidth * as.numeric(item$strand == "-")
+    item$pos <- item$pos + neg_shift
+    
     idx <- item$pos >= region$start & item$pos <= region$end
     if (sum(idx) == 0) {
       return(rep(0, 2 * len))
     }
     strand <- item$strand[idx]
     position <- item$pos[idx]
-
-    # Create a row that represents the flanking region surrounding a site.
+    
+    # Create a row that represents the flanking region surrounding a site, 
+    # each column is a position relative to the center of the motif match. 
+    # The values in this matrix are number of read start- sites that occur at that position. 
+    # We simply concatenate the forward and reverse strands together for the purpose of model fitting.
     # The row contains entries for the positive followed by negative strands.
     is.neg <- as.numeric(strand == "-")
     j <- 1 + position - min(position) + (len * is.neg)
