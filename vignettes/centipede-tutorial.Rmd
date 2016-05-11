@@ -9,10 +9,14 @@ abstract: |
   not. For details about the statistical models underlying the methods, please
   see (Pique-Regi, et al. 2011).
 output:
-    rmarkdown::html_vignette:
-        toc: true
-        number_sections: true
+    html_document:
+      highlight: pygments
+      toc: true
+      toc_float:
+        collapsed: false
+        smooth_scroll: false
     pdf_document:
+        highlight: pygments
         toc: true
         number_sections: true
 vignette: >
@@ -26,11 +30,10 @@ vignette: >
 [Transcription factors] (TFs) are proteins involved in the transcription of
 DNA to RNA. They bind to genomic DNA and regulate the transcription of nearby
 genes. Biologists can perform experiments to identify the specific sequences
-of nucleotides to which a TF can bind, called motifs. Computational biologists
-can use these motifs to identify sites in the genome where a a TF is likely to
-bind. We can use data from [DNase-Seq] experiments that measure open chromatin
-across the entire genome to determine if a putative TF binding site actually
-has a bound TF.
+of nucleotides to which a TF can bind. These short sequences are called motifs. 
+Computational biologists can use motifs to scan a genome and find sites where a
+TF is likely to bind. We can look for evidence that a putative site is actually
+bound by a TF by integrating open chromatin data from [DNase-Seq] experiments.
 
 [CENTIPEDE] is a computational method to infer if a region of the genome is
 bound by a particular TF. It uses information from a DNase-Seq experiment
@@ -38,7 +41,8 @@ about the profile of reads surrounding a putative TF binding site. Further, it
 is able to incorporoate prior information such as sequence conservation across
 species. The method was created by [Roger Pique-Regi] and [Jacob Degner] when
 they were working in [Jonathan Pritchard]'s group at University of Chicago
-in 2011.
+in 2011. Please see their [publication][Pique2011] for more details about how
+the method works.
 
 # Software requirements
 
@@ -55,7 +59,7 @@ Go to the MEME Suite download page to find the latest version of software:
 
 In this tutorial, I'll use version 4.10.1 patch 4:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 wget http://meme-suite.org/meme-software/4.10.1/meme_4.10.1_4.tar.gz
 tar xf meme_4.10.1_4.tar.gz
 cd meme_4.10.1
@@ -67,7 +71,7 @@ make install
 Add the `$HOME/meme/bin` folder to your `PATH` after you execute the above
 commands. You'll probably want to add this line to your `.bashrc` or similar.
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 export PATH="$PATH:$HOME/meme/bin"
 ```
 
@@ -78,7 +82,7 @@ already have it installed.
 
 Next, install CENTIPEDE with these commands in your shell (not in R):
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 wget http://download.r-forge.r-project.org/src/contrib/CENTIPEDE_1.2.tar.gz
 R CMD INSTALL CENTIPEDE_1.2.tar.gz
 ```
@@ -130,7 +134,7 @@ MEME Suite webpage if you click "Motif Databases" here:
 In this tutorial, we'll just focus on a single PWM for the human [STAT4] gene,
 taken from version 1.02 of the [CISBP] database:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 wget http://cisbp.ccbr.utoronto.ca/data/1.02/DataFiles/PWMs/Files/M6496_1.02.txt
 
 cat M6496_1.02.txt
@@ -156,7 +160,7 @@ Pos	A	C	G	T
 You can use the `matrix2meme` utility provided in the [MEME Suite] to create
 a file in [MEME format].
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 matrix2meme < <(tail -n+2 M6496_1.02.txt | cut -f2-) > M6496_1.02.meme
 
 cat M6496_1.02.meme
@@ -195,7 +199,7 @@ letter-probability matrix: alength= 4 w= 13 nsites= 20 E= 0
 We'll use the UCSC human reference genome version hg19. You can download the
 reference genome [here][hg19], or follow these commands:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 wget "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/chromFaMasked.tar.gz"
 tar -xzvf chromFaMasked.tar.gz
 gunzip -c chr*.fa.masked > hg19.fa
@@ -215,7 +219,7 @@ two things:
 
 Download the files:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 # 2.12 MB
 wget --no-check-certificate \
   https://www.encodeproject.org/files/ENCFF001UUQ/@@download/ENCFF001UUQ.bed.gz
@@ -231,7 +235,7 @@ wget --no-check-certificate \
 
 Select the most statistically significant DNase-Seq peaks with P < 1e-8:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 dnase=ENCFF001UUQ.narrowPeak.gz
 dnase_gt8=ENCFF001UUQ_gt8.narrowPeak.gz
 
@@ -240,7 +244,7 @@ zcat $dnase | awk '{if ($8 > 8) print}' | gzip > $dnase_gt8
 
 Obtain nucleotide sequences within these peaks:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 genome=hg19.fa
 dnase_fasta=ENCFF001UUQ_gt8.fa
 
@@ -249,7 +253,7 @@ bedtools getfasta -fi $genome -bed $dnase_gt8 -fo $dnase_fasta
 
 Search for sequences within these peaks that match the PWM:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 meme=M6496_1.02.meme
 sites=M6496_1.02.fimo.txt.gz
 
@@ -276,13 +280,13 @@ zcat $sites | head
 Start an R session and load the code provided in the package that accompanies
 this tutorial:
 
-```{r}
-# install.packages("devtools")
-library(devtools)
+```{r, message=FALSE}
 library(Rsamtools)
 library(CENTIPEDE)
 
 # Install the tutorial package:
+# install.packages("devtools")
+# library(devtools)
 # devtools::install_github("slowkow/CENTIPEDE.tutorial")
 
 # Load the functions and example data:
@@ -300,7 +304,7 @@ motifs, then you should call the `centipede_data` function on your own files.
 cen <- centipede_data(
   bam_file = "ENCFF000SHS.bam",
   fimo_file = "M6496_1.02.fimo.txt.gz",
-  log10p = 4,
+  pvalue = 1e-4,
   flank_size = 100
 )
 ```
@@ -320,14 +324,17 @@ In the count matrix `mat`, reads on the positive strand are counted in the
 first 213 columns of the matrix, and reads on the negative strand are counted
 in the last 213 columns of the matrix.
 
-Below, we can see the read start counts for the first region
-`chr1:753016-753228`. Notice that there is just 1 read on the positive strand
-about 90 bases upstream of the PWM match site (columns 1-213 in the count
-matrix). On the negative strand, we have up to 4 reads mapping at single
-position (columns 214-426 in the count matrix).
+Below, we can see the read start site counts for the region
+`r rownames(cen$mat)[2096]`. The positive strand is shown in blue on the left
+side of the plot (columns 1-213 in the count matrix). The negative strand is
+shown in red on the right side (columns 214-426 in the count matrix). The
+dotted lines indicate the 13 bases where the motif is located.
 
-```{r}
-plot(cen$mat[1,], xlab = "column", ylab = "reads")
+```{r, fig.width = 8}
+plot(cen$mat[2096,], xlab = "Position", ylab = "Read Start Sites", type = "h",
+     col = rep(c("blue", "red"), each = 213))
+abline(v = c(100, 113, 313, 326) + 0.5, lty = 2)
+abline(v = 213 + 0.5)
 ```
 
 We can see how many read starts occur in each region:
@@ -358,25 +365,25 @@ sum(fit$PostPr == 1)
 
 Plot a heatmap of the count matrix for sites predicted to be bound by STAT4:
     
-```{r, width = 5, height = 5}
+```{r, fig.width = 8, width = 5, height = 5}
 imageCutSitesCombined(cen$mat[fit$PostPr == 1,])
 ```
     
 Plot the footprint of STAT4 estimated by CENTIPEDE:
     
-```{r, width = 5, height = 5}
+```{r, fig.width = 8, width = 5, height = 5}
 plotProfile(fit$LambdaParList[[1]], Mlen = 13)
 ```
 
-## Incorporate sequence conservation information
+## Include sequence conservation information
 
-Let's run CENTIPEDE again, but this time we'll incorporate sequence
+Let's run CENTIPEDE again, but this time we'll include sequence
 conservation across multiple species. Will this information help to
 distinguish sites with or without a bound TF?
 
 Download the conservation data from UCSC:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 # 5.4 GB
 wget \
 http://hgdownload.cse.ucsc.edu/goldenpath/hg19/phastCons100way/hg19.100way.phastCons.bw
@@ -384,7 +391,7 @@ http://hgdownload.cse.ucsc.edu/goldenpath/hg19/phastCons100way/hg19.100way.phast
 
 We need the `bigWigToBedGraph` utility to work with [bigWig] files:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bigWigToBedGraph
 
 # Put the executable into a folder that is listed in your PATH.
@@ -393,7 +400,7 @@ mv bigWigToBedGraph ~/bin
 
 Extract the conservation information within DNase peaks:
 
-```bash
+```{r, engine = 'bash', eval = FALSE}
 cons=hg19.100way.phastCons.bw
 cons_bed=${dnase_bed%%.*}_phastCons.bed.gz
 
@@ -454,7 +461,7 @@ site_cons <- sapply(1:length(sites), function(i) {
 
 Some sites are much more highly conserved than others:
 
-```{r}
+```{r, fig.width = 8}
 hist(site_cons)
 ```
 
@@ -467,7 +474,7 @@ plot(site_cons, log10(rowSums(cen$mat) + 1),
      xlab = "phastCons across 100 vertebrates")
 ```
 
-Run CENTIPEDE again, but this time incorporate conservation information:
+Run CENTIPEDE again, but this time include conservation information:
 
 ```{r, results='hide'}
 fit2 <- fitCentipede(
@@ -490,7 +497,7 @@ After incorporating conservation scores, the posterior probabilities have
 remained nearly unchanged. The greatest increase in posterior probability
 attributable to incorporation of the conservation score is 0.00685.
 
-```{r}
+```{r, fig.width = 8}
 range(fit2$PostPr - fit$PostPr)
 plot(sort(fit2$PostPr - fit$PostPr), ylab = "delta PostPr")
 ```
@@ -502,7 +509,7 @@ lets also use that information as a filter to limit the number of sites that
 are modeled by CENTIPEDE.
 
 ```{r, results='hide'}
-idx <- site_cons > 0.8
+idx <- site_cons > 0.999
 fit3 <- fitCentipede(
   Xlist = list(DNase = cen$mat[idx, ]),
   Y = as.matrix(data.frame(
@@ -512,13 +519,20 @@ fit3 <- fitCentipede(
 )
 ```
 
-Now we can see that there might be an interesting signal 50 bp downstream of
-the PWM match sites. Perhaps this offset is in part due to the length of
-sequencing reads in this experiment (21 bp).
+We have limited our analysis to just `r sum(idx)` sites with the greatest
+conservation signal, instead of using all `r length(idx)` sites.
 
-```{r}
+```{r, fig.width = 8}
 plotProfile(fit3$LambdaParList[[1]], Mlen = 13)
 ```
+
+The profile of read start sites has changed dramatically. This might suggest
+that applying a strict filter with the conservation score can help to select
+true binding sites.
+
+# Acknowledgements
+
+Thanks to [Alex G](https://github.com/alexg9010) for contributing bug fixes.
 
 # Session Info
 
@@ -530,6 +544,8 @@ sessionInfo()
 
 Pique-Regi, R. et al. Accurate inference of transcription factor binding from
 DNA sequence and chromatin accessibility data. Genome Res. 21, 447–455 (2011).
+[Pubmed][Pique2011]
+
 
 [CENTIPEDE]: http://centipede.uchicago.edu/
 [CISBP]: http://cisbp.ccbr.utoronto.ca/
@@ -552,3 +568,4 @@ DNA sequence and chromatin accessibility data. Genome Res. 21, 447–455 (2011).
 [Bedtools]: https://bedtools.readthedocs.org/en/latest/index.html
 [Bioconductor]: http://www.bioconductor.org
 [Rsamtools]: http://www.bioconductor.org/packages/release/bioc/html/Rsamtools.html
+[Pique2011]: http://www.ncbi.nlm.nih.gov/pubmed/21106904

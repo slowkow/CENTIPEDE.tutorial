@@ -1,12 +1,11 @@
 Package: CENTIPEDE.tutorial
 Type: Package
 Title: A tutorial for running CENTIPEDE.
-Version: 1.1
-Date: 2015-09-17
+Version: 1.2
+Date: 2016-05-11
 Authors@R: 'Kamil Slowikowski <kslowikowski@fas.harvard.edu> [aut,cre]'
-Description: A package with some utility functions and a vignette describing
-    how to use CENTIPEDE to determine if a transcription factor is bound to
-    DNA.
+Description: Utility functions and a vignette describing how to use CENTIPEDE
+    to determine if a transcription factor is bound to DNA.
 LazyData: true
 Imports:
     GenomicRanges,
@@ -14,3 +13,4 @@ Imports:
 Suggests:
     CENTIPEDE
 License: GPL
+RoxygenNote: 5.0.1
