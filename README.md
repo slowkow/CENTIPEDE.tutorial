@@ -10,7 +10,16 @@ predict if a putative transcription factor binding site is actually bound or
 not. For details about the statistical models underlying the methods, please
 see ([Pique-Regi, et al. 2011][1]).
 
-[Click here][2] to read the tutorial.
+[CENTIPEDE]: http://centipede.uchicago.edu/ 
+[DNase-Seq]: https://en.wikipedia.org/wiki/DNase-Seq
+[1]: http://genome.cshlp.org/content/21/3/447
+
+Read the tutorial online or download the PDF:
+
+- [http://slowkow.github.io/CENTIPEDE.tutorial](http://slowkow.github.io/CENTIPEDE.tutorial/)
+- [centipede-tutorial.pdf][2]
+
+[2]: https://github.com/slowkow/CENTIPEDE.tutorial/raw/master/vignettes/centipede-tutorial.pdf
 
 This repository has functions to ease the use of CENTIPEDE:
 
@@ -46,8 +55,3 @@ Next, install the tutorial package:
 install.packages("devtools")
 devtools::install_github("slowkow/CENTIPEDE.tutorial")
 ```
-
-[CENTIPEDE]: http://centipede.uchicago.edu/ 
-[DNase-Seq]: https://en.wikipedia.org/wiki/DNase-Seq
-[1]: http://genome.cshlp.org/content/21/3/447
-[2]: https://github.com/slowkow/CENTIPEDE.tutorial/raw/master/vignettes/centipede-tutorial.pdf
