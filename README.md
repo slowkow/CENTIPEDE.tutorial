@@ -16,7 +16,7 @@ see ([Pique-Regi, et al. 2011][1]).
 
 Read the tutorial online or download the PDF:
 
-- [http://slowkow.github.io/CENTIPEDE.tutorial](http://slowkow.github.io/CENTIPEDE.tutorial/)
+- <https://slowkow.github.io/CENTIPEDE.tutorial>
 - [centipede-tutorial.pdf][2]
 
 [2]: https://github.com/slowkow/CENTIPEDE.tutorial/raw/master/vignettes/centipede-tutorial.pdf
