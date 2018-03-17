@@ -7,9 +7,9 @@
 read_bedGraph(filename, ...)
 }
 \arguments{
-\item{filename}{The file to read.}
+\item{filename}{The file to read. No column names.}
 
-\item{...}{Additional parameters passed to read.delim.}
+\item{...}{Additional parameters passed to \code{\link[readr]{read_tsv}}}
 }
 \value{
 A GRanges object.
@@ -17,4 +17,3 @@ A GRanges object.
 \description{
 Read a bedGraph file with 4 columns: chrom, start, end, score
 }
-

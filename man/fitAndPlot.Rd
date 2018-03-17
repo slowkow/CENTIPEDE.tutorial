@@ -29,4 +29,3 @@ cen is a list returned by \code{\link{centipede_data}}. It has a dataframe
    motif match. The values in this matrix are the count of read start sites
    at that position.
 }
-

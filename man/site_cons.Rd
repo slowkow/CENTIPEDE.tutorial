@@ -17,4 +17,3 @@ site_cons
 A vector of mean conservation scores for the PWM sites in "cen"
 }
 \keyword{datasets}
-

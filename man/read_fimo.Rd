@@ -23,4 +23,3 @@ threshold.
 For sites represented multiple times, the one with the maximum
    score is selected.
 }
-

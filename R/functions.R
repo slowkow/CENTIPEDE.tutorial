@@ -12,13 +12,14 @@ parse_region <- function(region) {
 
 #' Read a bedGraph file with 4 columns: chrom, start, end, score
 #'
-#' @param filename The file to read.
-#' @param ... Additional parameters passed to read.delim.
+#' @param filename The file to read. No column names.
+#' @param ... Additional parameters passed to \code{\link[readr]{read_tsv}}
 #' @return A GRanges object.
 #' @export
+#' @importFrom readr read_tsv
 read_bedGraph <- function(filename, ...) {
-  dat <- read.delim(
-    filename, header = FALSE, stringsAsFactors = FALSE, ...)
+  dat <- read_tsv(
+    filename, col_names = FALSE, ...)
   colnames(dat) <- c("chrom", "start", "end", "score")
   makeGRangesFromDataFrame(
     df = dat,
@@ -38,18 +39,20 @@ read_bedGraph <- function(filename, ...) {
 #'    For sites represented multiple times, the one with the maximum
 #'    score is selected.
 #' @export
+#' @importFrom readr read_tsv
+#' @importFrom janitor clean_names 
 read_fimo <- function(fimo_file, pvalue = 1e-4, ...) {
   # Read the PWM sites.
-  sites <- read.delim(fimo_file, ...)
+  sites <- clean_names(read_tsv(fimo_file, ...))
 
   # Discard poor matches.
-  sites <- sites[sites$p.value < pvalue, , drop = FALSE]
+  sites <- sites[sites$p_value < pvalue, , drop = FALSE]
 
   # For sites represented multiple times, select the one with the max score.
-  sites$region <- paste(sites$sequence.name, sites$start, sites$stop)
+  sites$region <- paste(sites$sequence_name, sites$start, sites$stop)
 
   # Sort sites according to regions and descending score.
-  sites <- sites[with(sites, order(sequence.name, start, stop, -score)), ]
+  sites <- sites[with(sites, order(sequence_name, start, stop, -score)), ]
 
   # Find duplicated regions and remove the ones with lower scores.
   dups <- duplicated(sites$region)
@@ -80,6 +83,9 @@ read_fimo <- function(fimo_file, pvalue = 1e-4, ...) {
 #'    The returned dataframe "regions" described each region with a p-value
 #'    and q-value from FIMO.
 #' @export
+#' @importFrom GenomicRanges GRanges
+#' @importFrom IRanges IRanges
+#' @importFrom Rsamtools scanBam ScanBamParam
 centipede_data <- function(
   bam_file, fimo_file, pvalue = 1e-4, flank_size = 100, ...
 ) {
@@ -98,11 +104,11 @@ centipede_data <- function(
   }
 
   # Extract reads that overlap the PWM sites.
-  bam_list <- Rsamtools::scanBam(
+  bam_list <- scanBam(
     file = bam_file,
-    param = Rsamtools::ScanBamParam(
+    param = ScanBamParam(
       which = GRanges(
-        seqnames = sites$sequence.name,
+        seqnames = sites$sequence_name,
         ranges = IRanges(
           start = sites$start,
           end = sites$stop
@@ -119,17 +125,17 @@ centipede_data <- function(
   # Convert the list of "chr:start-end" regions to a dataframe.
   regions <- lapply(names(bam_list), parse_region)
   regions <- data.frame(
-    sequence.name = unlist(sapply(regions, function(x) x["chrom"])),
+    sequence_name = unlist(sapply(regions, function(x) x["chrom"])),
     start = as.numeric(unlist(sapply(regions, function(x) x["start"]))),
     stop = as.numeric(unlist(sapply(regions, function(x) x["end"])))
   )
   regions$index <- 1:nrow(regions)
 
-  # Grab score, p.value, and q.value, but drop regions with no reads.
+  # Grab score, p_value, and q_value, but drop regions with no reads.
   regions <- merge(regions, sites)
 
   # Sort the regions by coordinate.
-  regions <- regions[with(regions, order(sequence.name, start, stop)),]
+  regions <- regions[with(regions, order(sequence_name, start, stop)),]
   bam_list <- bam_list[regions$index]
 
   # Drop unused columns.

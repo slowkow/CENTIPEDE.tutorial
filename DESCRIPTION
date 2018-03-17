@@ -1,16 +1,22 @@
 Package: CENTIPEDE.tutorial
-Type: Package
+Version: 1.2.1
+Authors@R: c(
+    person("Kamil", "Slowikowski", email = "kslowikowski@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-2843-6370"))
+    )
 Title: A tutorial for running CENTIPEDE.
-Version: 1.2
-Date: 2016-05-11
-Authors@R: 'Kamil Slowikowski <kslowikowski@fas.harvard.edu> [aut,cre]'
 Description: Utility functions and a vignette describing how to use CENTIPEDE
     to determine if a transcription factor is bound to DNA.
 LazyData: true
 Imports:
+    IRanges,
     GenomicRanges,
-    Rsamtools
+    Rsamtools,
+    readr,
+    janitor
 Suggests:
     CENTIPEDE
-License: GPL
-RoxygenNote: 5.0.1
+VignetteBuilder: knitr
+License: GPL-3 | file LICENSE
+URL: https://github.com/slowkow/CENTIPEDE.tutorial
+BugReports: https://github.com/slowkow/CENTIPEDE.tutorial/issues
+RoxygenNote: 6.0.1

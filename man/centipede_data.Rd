@@ -25,4 +25,3 @@ The returend matrix "mat" has one row for each region in the BED
    The returned dataframe "regions" described each region with a p-value
    and q-value from FIMO.
 }
-

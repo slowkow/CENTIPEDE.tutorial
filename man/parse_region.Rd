@@ -15,4 +15,3 @@ A list with elements "chrom", "start", and "end".
 \description{
 Parse a genomic region into parts.
 }
-

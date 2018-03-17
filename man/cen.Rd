@@ -26,4 +26,3 @@ cen
 A dataset ready to use with CENTIPEDE.
 }
 \keyword{datasets}
-
